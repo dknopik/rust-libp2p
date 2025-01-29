@@ -1,4 +1,4 @@
-use std::{
+pub use std::{
     collections::HashMap,
     num::NonZeroUsize,
     task::{Context, Poll},
@@ -141,14 +141,14 @@ impl Behaviour<MemoryStore> {
 
 pub struct Config {
     /// TTL for a record.
-    record_ttl: Duration,
+    pub record_ttl: Duration,
     /// The capacaity of a record store.  
     /// The least used record will be discarded when the store is full.
-    record_capacity: NonZeroUsize,
+    pub record_capacity: NonZeroUsize,
     /// The interval for garbage collecting records.
-    check_record_ttl_interval: Duration,
+    pub check_record_ttl_interval: Duration,
     /// Only provide signed addresses to the behaviour when set to true.
-    strict_mode: bool,
+    pub strict_mode: bool,
 }
 
 impl Default for Config {
