@@ -164,8 +164,7 @@ impl Default for Config {
 }
 
 mod record {
-    use std::rc::Rc;
-
+    use std::sync::Arc;
     use libp2p_core::PeerRecord;
     use lru::LruCache;
 
@@ -209,7 +208,7 @@ mod record {
             should_expire: bool,
         ) -> bool {
             let mut is_updated = false;
-            let signed_record = Rc::new(signed_record.clone());
+            let signed_record = Arc::new(signed_record.clone());
             for address in signed_record.addresses() {
                 // promote the address or update with the latest signature.
                 if let Some(r) = self.addresses.get_mut(address) {
@@ -250,13 +249,13 @@ mod record {
         /// Reference to the `PeerRecord` that contains this address.  
         /// The inner `PeerRecord` will be dropped automatically
         /// when there is no living reference to it.
-        pub signature: Option<Rc<libp2p_core::PeerRecord>>,
+        pub signature: Option<Arc<libp2p_core::PeerRecord>>,
     }
     impl AddressRecord {
         pub(crate) fn new(
             source: AddressSource,
             should_expire: bool,
-            signed: Option<Rc<libp2p_core::PeerRecord>>,
+            signed: Option<Arc<libp2p_core::PeerRecord>>,
         ) -> Self {
             Self {
                 last_seen: Instant::now(),
