@@ -14,7 +14,7 @@ use super::{store::Event, Store};
 use crate::{store::AddressSource, Behaviour};
 
 /// A in-memory store.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct MemoryStore {
     /// An address book of peers regardless of their status(connected or not).
     address_book: HashMap<PeerId, record::PeerAddressRecord>,
@@ -139,6 +139,7 @@ impl Behaviour<MemoryStore> {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Config {
     /// TTL for a record.
     pub record_ttl: Duration,
@@ -170,6 +171,7 @@ mod record {
 
     use super::*;
 
+    #[derive(Debug)]
     pub(crate) struct PeerAddressRecord {
         /// A LRU(Least Recently Used) cache for addresses.  
         /// Will delete the least-recently-used record when full.
