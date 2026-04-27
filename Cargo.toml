@@ -28,6 +28,7 @@ members = [
     "misc/multistream-select",
     "misc/peer-store",
     "misc/quick-protobuf-codec",
+    "misc/wiretap",
     "misc/quickcheck-ext",
     "misc/rw-stream-sink",
     "misc/server",
@@ -113,6 +114,7 @@ libp2p-webrtc = { version = "0.10.0-alpha", path = "transports/webrtc" }
 libp2p-webrtc-utils = { version = "0.5.0", path = "misc/webrtc-utils" }
 libp2p-webrtc-websys = { version = "0.5.0", path = "transports/webrtc-websys" }
 libp2p-websocket = { version = "0.46.0", path = "transports/websocket" }
+libp2p-wiretap = { version = "0.1.0", path = "misc/wiretap" }
 libp2p-websocket-websys = { version = "0.6.0", path = "transports/websocket-websys" }
 libp2p-webtransport-websys = { version = "0.6.0", path = "transports/webtransport-websys" }
 libp2p-yamux = { version = "0.48.0", path = "muxers/yamux" }

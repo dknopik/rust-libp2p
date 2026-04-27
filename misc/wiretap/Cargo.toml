@@ -1,0 +1,29 @@
+[package]
+name = "libp2p-wiretap"
+edition.workspace = true
+rust-version = { workspace = true }
+description = "Xray wiretap protocol instrumentation for libp2p"
+version = "0.1.0"
+license = "MIT"
+repository = "https://github.com/libp2p/rust-libp2p"
+keywords = ["peer-to-peer", "libp2p", "networking", "instrumentation"]
+categories = ["network-programming", "asynchronous"]
+publish = false
+
+[dependencies]
+futures = { workspace = true }
+libp2p-core = { workspace = true }
+libp2p-identity = { workspace = true }
+pin-project = "1.1.11"
+quick-protobuf = "0.8"
+tokio = { workspace = true, features = ["net", "sync", "io-util", "time", "rt", "fs"] }
+tracing = { workspace = true }
+unsigned-varint = { workspace = true, features = ["std"] }
+web-time = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }
+libp2p-identity = { workspace = true, features = ["rand"] }
+
+[lints]
+workspace = true

@@ -3350,6 +3350,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "libp2p-wiretap"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "libp2p-core",
+ "libp2p-identity",
+ "pin-project",
+ "quick-protobuf",
+ "tokio",
+ "tracing",
+ "unsigned-varint",
+ "web-time",
+]
+
+[[package]]
 name = "libp2p-yamux"
 version = "0.48.0"
 dependencies = [
