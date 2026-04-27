@@ -2,13 +2,11 @@ use std::collections::HashMap;
 
 use crate::generated::wiretap::StringDef;
 
-#[allow(dead_code)]
 pub(crate) struct StringInterner {
     map: HashMap<String, u32>,
     next_id: u32,
 }
 
-#[allow(dead_code)]
 impl StringInterner {
     pub(crate) fn new() -> Self {
         Self {

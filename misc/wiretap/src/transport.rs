@@ -5,13 +5,25 @@ use std::{
 
 use futures::future::{MapOk, TryFutureExt};
 use libp2p_core::{
-    Multiaddr,
+    multiaddr::Protocol,
     muxing::StreamMuxer,
     transport::{DialOpts, ListenerId, TransportError, TransportEvent},
+    Multiaddr,
 };
 use libp2p_identity::PeerId;
 
 use crate::{emitter::Emitter, generated::wiretap::Direction, muxer::Muxer};
+
+fn infer_connection_meta(addr: &Multiaddr) -> (&'static str, &'static str, &'static str) {
+    for proto in addr.iter() {
+        match proto {
+            Protocol::QuicV1 | Protocol::Quic => return ("quic-v1", "tls", "quic"),
+            Protocol::Tcp(_) => return ("tcp", "noise", ""),
+            _ => {}
+        }
+    }
+    ("", "", "")
+}
 
 #[derive(Debug, Clone)]
 #[pin_project::pin_project]
@@ -59,19 +71,22 @@ where
     ) -> Result<Self::Dial, TransportError<Self::Error>> {
         let emitter = self.emitter.clone();
         let remote_addr = addr.to_string();
-        Ok(self
-            .transport
-            .dial(addr, dial_opts)?
-            .map_ok(Box::new(move |(peer_id, stream_muxer)| {
+        let (transport, security, muxer) = infer_connection_meta(&addr);
+        Ok(self.transport.dial(addr, dial_opts)?.map_ok(Box::new(
+            move |(peer_id, stream_muxer)| {
                 let peer_alias = emitter.register_peer(&peer_id);
                 let conn_alias = emitter.register_connection(
                     peer_alias,
                     &remote_addr,
                     "",
                     Direction::DIRECTION_OUT,
+                    transport,
+                    security,
+                    muxer,
                 );
                 (peer_id, Muxer::new(stream_muxer, emitter, conn_alias))
-            })))
+            },
+        )))
     }
 
     fn poll(
@@ -89,6 +104,7 @@ where
                 let emitter = this.emitter.clone();
                 let remote_str = send_back_addr.to_string();
                 let local_str = local_addr.to_string();
+                let (transport, security, muxer) = infer_connection_meta(&local_addr);
                 Poll::Ready(TransportEvent::Incoming {
                     listener_id,
                     upgrade: upgrade.map_ok(Box::new(move |(peer_id, stream_muxer)| {
@@ -98,6 +114,9 @@ where
                             &remote_str,
                             &local_str,
                             Direction::DIRECTION_IN,
+                            transport,
+                            security,
+                            muxer,
                         );
                         (peer_id, Muxer::new(stream_muxer, emitter, conn_alias))
                     })),

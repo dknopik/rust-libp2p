@@ -49,6 +49,14 @@ impl EmitterInner {
             let _ = tx.try_send(Arc::clone(&env));
         }
     }
+
+    fn intern_string(&mut self, s: &str) -> u32 {
+        let (id, def) = self.interner.intern(s);
+        if let Some(def) = def {
+            self.emit_payload(OneOfpayload::string_def(def));
+        }
+        id
+    }
 }
 
 #[derive(Clone)]
@@ -101,29 +109,45 @@ impl Emitter {
         alias
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn register_connection(
         &self,
         peer_alias: u64,
         remote_addr: &str,
         local_addr: &str,
         direction: Direction,
+        transport: &str,
+        security: &str,
+        muxer: &str,
     ) -> u64 {
         let mut inner = self.inner.lock().unwrap();
+        let transport_id = inner.intern_string(transport);
+        let security_id = inner.intern_string(security);
+        let muxer_id = inner.intern_string(muxer);
         let (alias, upsert) = inner.state.register_connection(
             peer_alias,
             remote_addr,
             local_addr,
             direction,
+            transport_id,
+            security_id,
+            muxer_id,
             now_ns(),
         );
         inner.emit_payload(OneOfpayload::connection_upsert(upsert));
         alias
     }
 
-    pub(crate) fn register_stream(&self, conn_alias: u64, direction: Direction) -> u64 {
+    pub(crate) fn register_stream(
+        &self,
+        conn_alias: u64,
+        direction: Direction,
+        protocol: &str,
+    ) -> u64 {
         let mut inner = self.inner.lock().unwrap();
+        let protocol_id = inner.intern_string(protocol);
         let (alias, upsert) =
-            inner.state.register_stream(conn_alias, direction, now_ns());
+            inner.state.register_stream(conn_alias, direction, protocol_id, now_ns());
         inner.emit_payload(OneOfpayload::stream_upsert(upsert));
         alias
     }

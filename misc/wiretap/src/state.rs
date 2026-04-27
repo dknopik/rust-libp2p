@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use libp2p_identity::PeerId;
 
 use crate::generated::wiretap::{
-    self, ConnectionClosed, ConnectionUpsert, Direction, PeerUpsert, StreamClosed, StreamUpsert,
-    mod_Envelope::OneOfpayload,
+    self, mod_Envelope::OneOfpayload, ConnectionClosed, ConnectionUpsert, Direction, PeerUpsert,
+    StreamClosed, StreamUpsert,
 };
 
 struct PeerInfo {
@@ -17,12 +17,16 @@ struct ConnectionInfo {
     remote_addr: String,
     local_addr: String,
     direction: Direction,
+    transport_id: u32,
+    security_id: u32,
+    muxer_id: u32,
     opened_at_ns: i64,
 }
 
 struct StreamInfo {
     conn_alias: u64,
     direction: Direction,
+    protocol_id: u32,
     opened_at_ns: i64,
 }
 
@@ -67,12 +71,16 @@ impl AliasTracker {
         (alias, Some(upsert))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn register_connection(
         &mut self,
         peer_alias: u64,
         remote_addr: &str,
         local_addr: &str,
         direction: Direction,
+        transport_id: u32,
+        security_id: u32,
+        muxer_id: u32,
         opened_at_ns: i64,
     ) -> (u64, ConnectionUpsert) {
         let alias = self.next_conn_alias;
@@ -84,6 +92,9 @@ impl AliasTracker {
                 remote_addr: remote_addr.to_owned(),
                 local_addr: local_addr.to_owned(),
                 direction,
+                transport_id,
+                security_id,
+                muxer_id,
                 opened_at_ns,
             },
         );
@@ -93,8 +104,10 @@ impl AliasTracker {
             remote_addr: remote_addr.to_owned(),
             local_addr: local_addr.to_owned(),
             direction,
+            transport_id,
+            security_id,
+            muxer_id,
             opened_at_ns,
-            ..Default::default()
         };
         (alias, upsert)
     }
@@ -103,6 +116,7 @@ impl AliasTracker {
         &mut self,
         conn_alias: u64,
         direction: Direction,
+        protocol_id: u32,
         opened_at_ns: i64,
     ) -> (u64, StreamUpsert) {
         let alias = self.next_stream_alias;
@@ -112,6 +126,7 @@ impl AliasTracker {
             StreamInfo {
                 conn_alias,
                 direction,
+                protocol_id,
                 opened_at_ns,
             },
         );
@@ -119,7 +134,7 @@ impl AliasTracker {
             stream_alias: alias,
             conn_alias,
             direction,
-            protocol_id: 0,
+            protocol_id,
             opened_at_ns,
         };
         (alias, upsert)
@@ -160,10 +175,13 @@ impl AliasTracker {
                 stream_closeds.push(closed);
             }
         }
-        let conn_closed = self.connections.remove(&conn_alias).map(|_| ConnectionClosed {
-            conn_alias,
-            closed_at_ns,
-        });
+        let conn_closed = self
+            .connections
+            .remove(&conn_alias)
+            .map(|_| ConnectionClosed {
+                conn_alias,
+                closed_at_ns,
+            });
         (conn_closed, stream_closeds)
     }
 
@@ -190,8 +208,10 @@ impl AliasTracker {
                 remote_addr: info.remote_addr.clone(),
                 local_addr: info.local_addr.clone(),
                 direction: info.direction,
+                transport_id: info.transport_id,
+                security_id: info.security_id,
+                muxer_id: info.muxer_id,
                 opened_at_ns: info.opened_at_ns,
-                ..Default::default()
             }));
         }
 
@@ -202,7 +222,7 @@ impl AliasTracker {
                 stream_alias: *alias,
                 conn_alias: info.conn_alias,
                 direction: info.direction,
-                protocol_id: 0,
+                protocol_id: info.protocol_id,
                 opened_at_ns: info.opened_at_ns,
             }));
         }
@@ -238,10 +258,13 @@ mod tests {
             "/ip4/1.2.3.4/tcp/1234",
             "/ip4/0.0.0.0/tcp/5678",
             Direction::DIRECTION_OUT,
+            0,
+            0,
+            0,
             100,
         );
-        tracker.register_stream(conn_alias, Direction::DIRECTION_OUT, 200);
-        tracker.register_stream(conn_alias, Direction::DIRECTION_IN, 300);
+        tracker.register_stream(conn_alias, Direction::DIRECTION_OUT, 0, 200);
+        tracker.register_stream(conn_alias, Direction::DIRECTION_IN, 0, 300);
 
         let (conn_closed, stream_closeds) = tracker.close_connection(conn_alias, 400);
         assert!(conn_closed.is_some());
@@ -258,9 +281,12 @@ mod tests {
             "/ip4/1.2.3.4/tcp/1234",
             "/ip4/0.0.0.0/tcp/5678",
             Direction::DIRECTION_OUT,
+            0,
+            0,
+            0,
             100,
         );
-        tracker.register_stream(conn_alias, Direction::DIRECTION_OUT, 200);
+        tracker.register_stream(conn_alias, Direction::DIRECTION_OUT, 0, 200);
 
         let snap = tracker.generate_snapshot();
         // SnapshotStart + PeerUpsert + ConnectionUpsert + StreamUpsert + SnapshotEnd

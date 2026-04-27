@@ -6,11 +6,7 @@ use std::{
 use futures::ready;
 use libp2p_core::muxing::{StreamMuxer, StreamMuxerEvent};
 
-use crate::{
-    emitter::Emitter,
-    generated::wiretap::Direction,
-    stream::InstrumentedStream,
-};
+use crate::{emitter::Emitter, generated::wiretap::Direction, stream::InstrumentedStream};
 
 #[pin_project::pin_project(PinnedDrop)]
 pub struct Muxer<M> {
@@ -52,7 +48,9 @@ where
         let this = self.project();
         let inner = ready!(this.inner.poll_inbound(cx)?);
         let conn_alias = this.conn_alias.expect("muxer used after close");
-        let stream_alias = this.emitter.register_stream(conn_alias, Direction::DIRECTION_IN);
+        let stream_alias = this
+            .emitter
+            .register_stream(conn_alias, Direction::DIRECTION_IN, "");
         Poll::Ready(Ok(InstrumentedStream::new(
             inner,
             this.emitter.clone(),
@@ -67,7 +65,9 @@ where
         let this = self.project();
         let inner = ready!(this.inner.poll_outbound(cx)?);
         let conn_alias = this.conn_alias.expect("muxer used after close");
-        let stream_alias = this.emitter.register_stream(conn_alias, Direction::DIRECTION_OUT);
+        let stream_alias = this
+            .emitter
+            .register_stream(conn_alias, Direction::DIRECTION_OUT, "");
         Poll::Ready(Ok(InstrumentedStream::new(
             inner,
             this.emitter.clone(),
