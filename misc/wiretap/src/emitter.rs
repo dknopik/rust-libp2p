@@ -152,6 +152,14 @@ impl Emitter {
         alias
     }
 
+    pub(crate) fn set_stream_protocol(&self, stream_alias: u64, protocol: &str) {
+        let mut inner = self.inner.lock().unwrap();
+        let protocol_id = inner.intern_string(protocol);
+        if let Some(upsert) = inner.state.set_stream_protocol(stream_alias, protocol_id) {
+            inner.emit_payload(OneOfpayload::stream_upsert(upsert));
+        }
+    }
+
     pub(crate) fn close_stream(&self, stream_alias: u64, reason: CloseReason) {
         let mut inner = self.inner.lock().unwrap();
         if let Some(closed) = inner.state.close_stream(stream_alias, now_ns(), reason) {

@@ -55,6 +55,7 @@ where
             inner,
             this.emitter.clone(),
             stream_alias,
+            Direction::DIRECTION_IN,
         )))
     }
 
@@ -72,6 +73,7 @@ where
             inner,
             this.emitter.clone(),
             stream_alias,
+            Direction::DIRECTION_OUT,
         )))
     }
 

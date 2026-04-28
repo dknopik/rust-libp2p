@@ -140,6 +140,25 @@ impl AliasTracker {
         (alias, upsert)
     }
 
+    pub(crate) fn set_stream_protocol(
+        &mut self,
+        stream_alias: u64,
+        protocol_id: u32,
+    ) -> Option<StreamUpsert> {
+        let info = self.streams.get_mut(&stream_alias)?;
+        if info.protocol_id == protocol_id {
+            return None;
+        }
+        info.protocol_id = protocol_id;
+        Some(StreamUpsert {
+            stream_alias,
+            conn_alias: info.conn_alias,
+            direction: info.direction,
+            protocol_id,
+            opened_at_ns: info.opened_at_ns,
+        })
+    }
+
     pub(crate) fn close_stream(
         &mut self,
         stream_alias: u64,
