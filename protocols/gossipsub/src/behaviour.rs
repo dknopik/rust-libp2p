@@ -1921,7 +1921,7 @@ where
         // Record the received metric
         #[cfg(feature = "metrics")]
         if let Some(metrics) = self.metrics.as_mut() {
-            metrics.msg_recvd_unfiltered(&raw_message.topic, raw_message.raw_protobuf_len());
+            metrics.msg_recvd_unfiltered(&raw_message.topic, false, raw_message.raw_protobuf_len());
         }
 
         // Try and perform the data transform to the message. If it fails, consider it invalid.
@@ -3131,15 +3131,7 @@ where
                 }
 
                 #[cfg(feature = "partial_messages")]
-                RpcOut::PartialMessage(crate::partial_messages::PartialMessage {
-                    topic_hash,
-                    body,
-                    ..
-                }) => m.msg_sent(
-                    topic_hash,
-                    true,
-                    body.as_ref().map(|m| m.len()).unwrap_or_default(),
-                ),
+                RpcOut::PartialMessage(msg) => m.msg_sent(&msg.topic_hash, true, msg.rough_size()),
                 _ => {}
             }
         }
@@ -3649,6 +3641,16 @@ where
 
                 #[cfg(feature = "partial_messages")]
                 if let Some(partial_message) = rpc.partial_message {
+                    // Record the received metric
+                    #[cfg(feature = "metrics")]
+                    if let Some(metrics) = self.metrics.as_mut() {
+                        metrics.msg_recvd_unfiltered(
+                            &partial_message.topic_hash,
+                            true,
+                            partial_message.rough_size(),
+                        );
+                    }
+
                     if self
                         .peer_score
                         .below_threshold(&propagation_source, |ts| ts.graylist_threshold)

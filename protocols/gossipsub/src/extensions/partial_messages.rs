@@ -673,6 +673,15 @@ pub struct PartialMessage {
     pub metadata: Option<Vec<u8>>,
 }
 
+impl PartialMessage {
+    pub fn rough_size(&self) -> usize {
+        self.group_id.len()
+            + self.topic_hash.as_str().len()
+            + self.body.as_ref().map(|b| b.len()).unwrap_or(0)
+            + self.metadata.as_ref().map(|m| m.len()).unwrap_or(0)
+    }
+}
+
 impl Debug for PartialMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PartialMessage")

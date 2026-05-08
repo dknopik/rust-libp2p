@@ -162,7 +162,7 @@ pub(crate) struct Metrics {
     /// Bytes received from last gossip message for each topic (after filtering duplicates).
     topic_msg_last_recv_bytes: Family<TopicHash, Gauge>,
     /// Bytes received from gossip messages for each topic (without filtering duplicates).
-    topic_msg_recv_bytes_unfiltered: Family<TopicHash, Counter>,
+    topic_msg_recv_bytes_unfiltered: Family<RpcSentLabel, Counter>,
     /// Bytes received from last gossip message for each topic (without filtering duplicates).
     topic_msg_last_recv_bytes_unfiltered: Family<TopicHash, Gauge>,
 
@@ -631,13 +631,16 @@ impl Metrics {
     }
 
     /// Register that a message was received (could have been a duplicate).
-    pub(crate) fn msg_recvd_unfiltered(&mut self, topic: &TopicHash, bytes: usize) {
+    pub(crate) fn msg_recvd_unfiltered(&mut self, topic: &TopicHash, partial: bool, bytes: usize) {
         if self.register_topic(topic).is_ok() {
             self.topic_msg_recv_counts_unfiltered
                 .get_or_create(topic)
                 .inc();
             self.topic_msg_recv_bytes_unfiltered
-                .get_or_create(topic)
+                .get_or_create(&RpcSentLabel {
+                    partial,
+                    topic_hash: topic.to_string(),
+                })
                 .inc_by(bytes as u64);
             self.topic_msg_last_recv_bytes_unfiltered
                 .get_or_create(topic)
